@@ -1,0 +1,1082 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HRIS Okaeri API Documentation",
+    "version": "1.0.0",
+    "description": "API documentation for HRIS Okaeri system"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "john.doe"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["super_admin", "admin", "employee"],
+            "example": "employee"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "john.doe",
+            "description": "Username of the account to reset password"
+          },
+          "password": {
+            "type": "string",
+            "example": "newpassword123",
+            "description": "New password for the account"
+          }
+        }
+      },
+      "ResetPasswordByIdRequest": {
+        "type": "object",
+        "required": ["id", "password"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1,
+            "description": "User ID of the account to reset password"
+          },
+          "password": {
+            "type": "string",
+            "example": "newpassword123",
+            "description": "New password for the account"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login to the system",
+        "description": "Authenticate user and get JWT token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "username": {
+                              "type": "string",
+                              "example": "john.doe"
+                            },
+                            "role": {
+                              "type": "string",
+                              "example": "employee"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "John Doe"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Reset user password",
+        "description": "Reset a user's password using their username",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Password reset successful"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or user not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password-by-id": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Reset user password by ID",
+        "description": "Reset a user's password using their user ID",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordByIdRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Password reset successful"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or user not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/branches": {
+      "post": {
+        "tags": ["Branches"],
+        "summary": "Create a new branch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Kantor Pusat"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "HO-001"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "Jl. Main Office No. 1"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "021-12345678"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "ho@company.com"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "decimal",
+                    "minimum": -90,
+                    "maximum": 90,
+                    "example": -6.185141,
+                    "description": "Branch latitude coordinate (South is negative)"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "decimal",
+                    "minimum": -180,
+                    "maximum": 180,
+                    "example": 106.831762,
+                    "description": "Branch longitude coordinate (West is negative)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Branch created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Kantor Pusat"
+                        },
+                        "code": {
+                          "type": "string",
+                          "example": "HO-001"
+                        },
+                        "address": {
+                          "type": "string",
+                          "example": "Jl. Main Office No. 1"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "example": "021-12345678"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "example": "ho@company.com"
+                        },
+                        "latitude": {
+                          "type": "number",
+                          "format": "decimal",
+                          "example": -6.185141
+                        },
+                        "longitude": {
+                          "type": "number",
+                          "format": "decimal",
+                          "example": 106.831762
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-20T08:30:00.000Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-20T08:30:00.000Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/benefits": {
+      "post": {
+        "tags": ["Benefit Management"],
+        "summary": "Create a new benefit",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "code", "type"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "BPJS Kesehatan Perusahaan"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "BPJS_KES_COMPANY"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["BPJS_COMPANY", "BPJS_EMPLOYEE", "ALLOWANCE", "DEDUCTION"],
+                    "example": "BPJS_COMPANY"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "BPJS Kesehatan tanggungan perusahaan"
+                  },
+                  "isFixed": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "multiplier": {
+                    "type": "number",
+                    "example": 4
+                  },
+                  "fixedAmount": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Benefit created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/employees": {
+      "post": {
+        "tags": ["Employee Management"],
+        "summary": "Create a new employee",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "namaLengkap",
+                  "tempatLahir",
+                  "tanggalLahir",
+                  "alamat",
+                  "jenisKelamin",
+                  "agama",
+                  "statusNikah",
+                  "pendidikan",
+                  "position",
+                  "gaji_pokok",
+                  "branchId",
+                  "user"
+                ],
+                "properties": {
+                  "namaLengkap": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "tempatLahir": {
+                    "type": "string",
+                    "example": "Jakarta"
+                  },
+                  "tanggalLahir": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "1990-01-01"
+                  },
+                  "alamat": {
+                    "type": "string",
+                    "example": "Jl. Karyawan No. 123"
+                  },
+                  "jenisKelamin": {
+                    "type": "string",
+                    "enum": ["L", "P"],
+                    "example": "L"
+                  },
+                  "agama": {
+                    "type": "string",
+                    "example": "Islam"
+                  },
+                  "statusNikah": {
+                    "type": "string",
+                    "example": "Menikah"
+                  },
+                  "pendidikan": {
+                    "type": "string",
+                    "example": "S1"
+                  },
+                  "position": {
+                    "type": "string",
+                    "example": "Staff IT"
+                  },
+                  "gaji_pokok": {
+                    "type": "number",
+                    "example": 5000000
+                  },
+                  "branchId": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "user": {
+                    "type": "object",
+                    "required": ["username", "password", "name", "role"],
+                    "properties": {
+                      "username": {
+                        "type": "string",
+                        "example": "john.doe"
+                      },
+                      "password": {
+                        "type": "string",
+                        "example": "password123"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": ["admin", "employee"],
+                        "example": "employee"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Employee created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "nip": {
+                      "type": "string"
+                    },
+                    "namaLengkap": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/salaries": {
+      "post": {
+        "tags": ["Salary Management"],
+        "summary": "Create a new salary record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["employeeId", "tanggalGaji"],
+                "properties": {
+                  "employeeId": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "tanggalGaji": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2024-01-25"
+                  },
+                  "allowances": {
+                    "type": "object",
+                    "example": {
+                      "transport": 500000,
+                      "makan": 750000
+                    }
+                  },
+                  "deductions": {
+                    "type": "object",
+                    "example": {
+                      "kasbon": 200000
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Salary created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "employeeId": {
+                      "type": "integer"
+                    },
+                    "tanggalGaji": {
+                      "type": "string"
+                    },
+                    "totalAllowance": {
+                      "type": "number"
+                    },
+                    "totalDeduction": {
+                      "type": "number"
+                    },
+                    "totalBpjsCompany": {
+                      "type": "number"
+                    },
+                    "totalBpjsEmployee": {
+                      "type": "number"
+                    },
+                    "netSalary": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Employee not found"
+          }
+        }
+      }
+    },
+    "/api/benefits/{id}": {
+      "put": {
+        "tags": ["Benefit Management"],
+        "summary": "Update a benefit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Benefit ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "BPJS Kesehatan Perusahaan"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "BPJS_KES_COMPANY"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["BPJS_COMPANY", "BPJS_EMPLOYEE", "ALLOWANCE", "DEDUCTION"],
+                    "example": "BPJS_COMPANY"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "BPJS Kesehatan tanggungan perusahaan"
+                  },
+                  "isFixed": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "multiplier": {
+                    "type": "number",
+                    "example": 4
+                  },
+                  "fixedAmount": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Benefit updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "isFixed": {
+                          "type": "boolean"
+                        },
+                        "multiplier": {
+                          "type": "number"
+                        },
+                        "fixedAmount": {
+                          "type": "number"
+                        },
+                        "isActive": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Benefit not found"
+          }
+        }
+      }
+    },
+    "/api/employees/{id}": {
+      "put": {
+        "tags": ["Employee Management"],
+        "summary": "Update an employee",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Employee ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "John"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john.doe@company.com"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "081234567890"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "Jl. Employee No. 123"
+                  },
+                  "position": {
+                    "type": "string",
+                    "example": "Software Engineer"
+                  },
+                  "department": {
+                    "type": "string",
+                    "example": "Engineering"
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["ACTIVE", "INACTIVE", "ON_LEAVE"],
+                    "example": "ACTIVE"
+                  },
+                  "joinDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2023-01-01"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "position": {
+                          "type": "string"
+                        },
+                        "department": {
+                          "type": "string"
+                        },
+                        "branchId": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "joinDate": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Employee not found"
+          }
+        }
+      }
+    },
+    "/api/branches/{id}": {
+      "put": {
+        "tags": ["Branch Management"],
+        "summary": "Update a branch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Branch ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Kantor Pusat"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "HO-001"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "Jl. Main Office No. 1"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "021-12345678"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "ho@company.com"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "decimal",
+                    "minimum": -90,
+                    "maximum": 90,
+                    "example": -6.185141,
+                    "description": "Branch latitude coordinate (South is negative)"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "decimal",
+                    "minimum": -180,
+                    "maximum": 180,
+                    "example": 106.831762,
+                    "description": "Branch longitude coordinate (West is negative)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Branch updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Branch not found"
+          }
+        }
+      }
+    }
+  }
+}

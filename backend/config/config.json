@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "root",
+    "password": "123456",
+    "database": "hris_okaeri",
+    "host": "127.0.0.1",
+    "port": "8889",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "123456",
+    "database": "hris_okaeri_test",
+    "host": "127.0.0.1",
+    "port": "8889",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "123456",
+    "database": "hris_okaeri_prod",
+    "host": "127.0.0.1",
+    "port": "8889",
+    "dialect": "mysql"
+  }
+}
