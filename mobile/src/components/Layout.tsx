@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { ReactNode, useEffect, useState } from 'react';
 import { House, QrCode, Person } from 'react-bootstrap-icons';
+import { Navbar, Container } from 'react-bootstrap';
 
 interface LayoutProps {
   children: ReactNode;
@@ -44,10 +45,25 @@ export default function Layout({ children }: LayoutProps) {
       minHeight: '100vh',
       paddingBottom: '60px'
     }}>
-      <main style={{ flex: 1 }}>
+      {/* Sticky Header */}
+      <Navbar bg="primary" variant="dark" fixed="top" className="shadow-sm">
+        <Container>
+          <Navbar.Brand className="mx-auto fw-bold">
+            <span className="me-2">👥</span>
+            HRIS
+          </Navbar.Brand>
+        </Container>
+      </Navbar>
+
+      {/* Main Content with top padding for header */}
+      <main style={{ 
+        flex: 1,
+        marginTop: '56px' // Height of the navbar
+      }}>
         {children}
       </main>
 
+      {/* Bottom Navigation */}
       <nav style={{
         position: 'fixed',
         bottom: 0,

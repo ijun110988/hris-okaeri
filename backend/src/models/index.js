@@ -16,12 +16,28 @@ fs.readdirSync(__dirname)
     db[model.name] = model;
   });
 
-// Second pass: Set up associations
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
+// Set up associations
+if (db.Attendance && db.Branch) {
+  db.Attendance.belongsTo(db.Branch, {
+    foreignKey: 'branchId',
+    as: 'Branch'
+  });
+
+  db.Branch.hasMany(db.Attendance, {
+    foreignKey: 'branchId',
+    as: 'Attendances'
+  });
+}
+
+if (db.Branch && db.Employee) {
+  db.Branch.hasMany(db.Employee, {
+    foreignKey: 'branchId'
+  });
+
+  db.Employee.belongsTo(db.Branch, {
+    foreignKey: 'branchId'
+  });
+}
 
 db.sequelize = sequelize;
 db.Sequelize = sequelize.Sequelize;

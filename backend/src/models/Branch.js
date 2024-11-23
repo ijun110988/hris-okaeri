@@ -53,11 +53,4 @@ const Branch = sequelize.define('Branch', {
   tableName: 'branches'
 });
 
-// Define associations
-Branch.associate = function(models) {
-  Branch.hasMany(models.Employee, {
-    foreignKey: 'branchId'
-  });
-};
-
 module.exports = Branch;

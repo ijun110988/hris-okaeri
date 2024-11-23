@@ -13,7 +13,11 @@ const Attendance = sequelize.define('Attendance', {
   },
   branchId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'branches',
+      key: 'id'
+    }
   },
   checkInTime: {
     type: DataTypes.DATE,

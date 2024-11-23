@@ -31,4 +31,7 @@ router.post('/scan', authenticateToken, attendanceController.scanQR);
 router.post('/check-in', authenticateToken, attendanceController.checkIn);
 router.post('/check-out', authenticateToken, attendanceController.checkOut);
 
+// Get attendance report
+router.get('/report', authenticateToken, attendanceController.getReport);
+
 module.exports = router;

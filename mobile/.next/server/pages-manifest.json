@@ -4,5 +4,6 @@
   "/_document": "pages/_document.js",
   "/attendance/scan": "pages/attendance/scan.js",
   "/profile": "pages/profile.js",
-  "/dashboard": "pages/dashboard.js"
+  "/dashboard": "pages/dashboard.js",
+  "/attendance/report": "pages/attendance/report.js"
 }

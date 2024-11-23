@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import axios from 'axios';
 import Layout from '../../components/Layout';
-import { Button, ButtonGroup } from 'react-bootstrap';
+import { Button, ButtonGroup, Card, Container, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
 
 export default function ScanQR() {
   const router = useRouter();
@@ -276,124 +276,155 @@ export default function ScanQR() {
 
   return (
     <Layout>
-      <div className="container py-4">
-        <div className="row justify-content-center">
-          <div className="col-12 col-md-6">
+      <Container className="py-4">
+        <Row className="justify-content-center">
+          <Col lg={6} md={8} sm={12}>
+            {/* Header */}
+            <div className="text-center mb-4">
+              <h2 className="fw-bold">Attendance Scanner</h2>
+              <p className="text-muted">Scan QR code to record your attendance</p>
+            </div>
+
             {/* Type Selection */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-body">
-                <h5 className="card-title mb-3">Select Attendance Type</h5>
-                <ButtonGroup className="w-100">
+            <Card className="shadow-sm mb-4 border-0">
+              <Card.Body className="p-4">
+                <Card.Title className="mb-3 fw-bold">Select Attendance Type</Card.Title>
+                <ButtonGroup className="w-100 gap-2">
                   <Button
+                    size="lg"
                     variant={selectedType === 'check-in' ? 'success' : 'outline-success'}
                     onClick={() => handleTypeSelect('check-in')}
                     disabled={scanStatus === 'processing'}
+                    className="rounded"
                   >
+                    <i className="bi bi-box-arrow-in-right me-2"></i>
                     Check In
                   </Button>
                   <Button
+                    size="lg"
                     variant={selectedType === 'check-out' ? 'danger' : 'outline-danger'}
                     onClick={() => handleTypeSelect('check-out')}
                     disabled={scanStatus === 'processing'}
+                    className="rounded"
                   >
+                    <i className="bi bi-box-arrow-right me-2"></i>
                     Check Out
                   </Button>
                 </ButtonGroup>
                 {!selectedType && (
-                  <div className="text-muted small mt-2">
+                  <div className="text-muted small mt-3 text-center">
+                    <i className="bi bi-info-circle me-2"></i>
                     Please select whether you want to check in or check out
                   </div>
                 )}
                 {selectedType === 'check-out' && (
-                  <div className="text-danger small mt-2">
+                  <Alert variant="warning" className="mt-3 mb-0">
+                    <i className="bi bi-clock me-2"></i>
                     Check-out is allowed between 15:00 and 23:00
-                  </div>
+                  </Alert>
                 )}
-              </div>
-            </div>
+              </Card.Body>
+            </Card>
 
             {/* Camera Selection */}
             {selectedType && cameras.length > 1 && (
-              <div className="card shadow-sm mb-4">
-                <div className="card-body">
-                  <h5 className="card-title mb-3">Select Camera</h5>
-                  <select 
-                    className="form-select"
+              <Card className="shadow-sm mb-4 border-0">
+                <Card.Body className="p-4">
+                  <Card.Title className="mb-3 fw-bold">Select Camera</Card.Title>
+                  <Form.Select
+                    size="lg"
                     value={cameraId}
                     onChange={(e) => handleCameraSwitch(e.target.value)}
+                    className="border-0 bg-light"
                   >
                     {cameras.map((camera) => (
                       <option key={camera.id} value={camera.id}>
                         {camera.label}
                       </option>
                     ))}
-                  </select>
-                </div>
-              </div>
+                  </Form.Select>
+                </Card.Body>
+              </Card>
             )}
 
             {/* Scanner */}
             {selectedType && (
-              <div className="card shadow-sm">
-                <div className="card-body p-0">
+              <Card className="shadow-sm border-0 overflow-hidden">
+                <Card.Body className="p-0">
                   <div 
                     ref={readerRef}
                     id="reader" 
                     style={{ 
                       width: '100%',
-                      minHeight: '300px',
+                      minHeight: '350px',
                       background: '#f8f9fa',
                       position: 'relative',
                       overflow: 'hidden',
                       borderRadius: '8px'
                     }}
                   />
-                </div>
-              </div>
+                </Card.Body>
+                
+                {/* Status Messages */}
+                <Card.Footer className="bg-white border-0 p-4">
+                  <div className="text-center">
+                    <div className="d-inline-flex align-items-center">
+                      {scanStatus === 'scanning' && (
+                        <span className="me-2 position-relative">
+                          <i className="bi bi-camera-fill fs-4 text-primary"></i>
+                          <span className="position-absolute top-0 start-100 translate-middle">
+                            <span className="badge bg-success border border-light rounded-circle p-1">
+                              <span className="visually-hidden">Scanning</span>
+                            </span>
+                          </span>
+                        </span>
+                      )}
+                      <p className={`mb-0 fs-5 ${
+                        scanStatus === 'error' ? 'text-danger' : 
+                        scanStatus === 'success' ? 'text-success' : 
+                        'text-muted'
+                      }`}>
+                        {getStatusMessage()}
+                      </p>
+                    </div>
+                    {scanCount > 0 && (
+                      <div className="text-success mt-2">
+                        <i className="bi bi-check2-circle me-1"></i>
+                        <small>Successfully scanned {scanCount} QR code{scanCount !== 1 ? 's' : ''}</small>
+                      </div>
+                    )}
+                  </div>
+                </Card.Footer>
+              </Card>
             )}
 
-            {/* Status Messages */}
-            <div className="text-center mt-4">
-              <div className="d-inline-flex align-items-center">
-                <i className={`bi bi-camera ${scanStatus === 'scanning' ? 'text-primary' : 'text-muted'} me-2`} />
-                <p className={`mb-0 ${scanStatus === 'error' ? 'text-danger' : scanStatus === 'success' ? 'text-success' : 'text-muted'}`}>
-                  {getStatusMessage()}
-                </p>
-              </div>
-              {scanCount > 0 && (
-                <div className="text-success mt-2">
-                  <small>Successfully scanned {scanCount} QR code{scanCount !== 1 ? 's' : ''}</small>
+            {/* Messages */}
+            <div className="mt-4">
+              {error && (
+                <Alert variant="danger" className="d-flex align-items-center mb-3">
+                  <i className="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                  <div>{error}</div>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert variant="success" className="d-flex align-items-center mb-3">
+                  <i className="bi bi-check-circle-fill fs-5 me-2"></i>
+                  <div>{success}</div>
+                </Alert>
+              )}
+
+              {loading && (
+                <div className="text-center">
+                  <Spinner animation="border" variant="primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
                 </div>
               )}
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="alert alert-danger d-flex align-items-center mt-4" role="alert">
-                <i className="bi bi-exclamation-triangle-fill me-2" />
-                <div>{error}</div>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <div className="alert alert-success d-flex align-items-center mt-4" role="alert">
-                <i className="bi bi-check-circle-fill me-2" />
-                <div>{success}</div>
-              </div>
-            )}
-
-            {/* Loading Indicator */}
-            {loading && (
-              <div className="text-center mt-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          </Col>
+        </Row>
+      </Container>
     </Layout>
   );
 }
