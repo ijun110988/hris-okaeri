@@ -1,7 +1,13 @@
 import { useRouter } from 'next/router';
 import { ReactNode, useEffect, useState } from 'react';
-import { House, QrCode, Person } from 'react-bootstrap-icons';
-import { Navbar, Container } from 'react-bootstrap';
+import { House, QrCode, Person, Bell } from 'react-bootstrap-icons';
+import { Navbar, Container, Badge } from 'react-bootstrap';
+import axios from 'axios';
+
+interface Message {
+  id: number;
+  read_status: boolean;
+}
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,9 +16,41 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await axios.get(process.env.NEXT_PUBLIC_API_URL + '/api/messages', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (response.data.status === 'success') {
+          const unreadMessages = response.data.data.filter((msg: Message) => !msg.read_status);
+          setUnreadCount(unreadMessages.length);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    // Fetch messages initially
+    fetchMessages();
+
+    // Set up interval to fetch messages every minute
+    const interval = setInterval(fetchMessages, 60000);
+
+    // Clean up interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
@@ -47,18 +85,49 @@ export default function Layout({ children }: LayoutProps) {
     }}>
       {/* Sticky Header */}
       <Navbar bg="primary" variant="dark" fixed="top" className="shadow-sm">
-        <Container>
-          <Navbar.Brand className="mx-auto fw-bold">
+        <Container className="d-flex justify-content-between align-items-center">
+          <div style={{ width: '40px' }}></div> {/* Spacer for centering */}
+          <Navbar.Brand className="fw-bold">
             <span className="me-2">👥</span>
             HRIS
           </Navbar.Brand>
+          <div 
+            style={{ 
+              width: '40px', 
+              cursor: 'pointer',
+              position: 'relative',
+              color: '#ffffff' // Menambahkan warna putih untuk lonceng
+            }}
+            onClick={() => router.push('/messages')}
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <Badge 
+                bg="danger" 
+                pill 
+                style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  fontSize: '0.7rem',
+                  minWidth: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
         </Container>
       </Navbar>
 
       {/* Main Content with top padding for header */}
       <main style={{ 
         flex: 1,
-        marginTop: '56px' // Height of the navbar
+        marginTop: '48px' // Mengurangi margin dari 56px ke 48px
       }}>
         {children}
       </main>
@@ -92,11 +161,13 @@ export default function Layout({ children }: LayoutProps) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 color: router.pathname === item.path ? '#0d6efd' : '#6c757d',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                textDecoration: 'none',
+                gap: '4px'
               }}
             >
               {item.icon}
-              <span style={{ fontSize: '0.75rem', marginTop: '4px' }}>{item.label}</span>
+              <small style={{ fontSize: '0.75rem' }}>{item.label}</small>
             </button>
           ))}
         </div>

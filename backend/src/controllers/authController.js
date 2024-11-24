@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { User } = require('../models');
+const { User, sequelize } = require('../models');
 
 const login = async (req, res) => {
   try {
@@ -309,11 +309,75 @@ const register = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    const userId = req.user.id;
+
+    // Validasi input
+    if (!current_password || !new_password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Current password and new password are required'
+      });
+    }
+
+    // Cari user dengan kolom yang spesifik
+    const user = await User.findOne({
+      where: { 
+        id: userId,
+        is_active: true
+      },
+      attributes: ['id', 'username', 'password', 'is_active']
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    // Verifikasi password lama
+    const isPasswordValid = await bcrypt.compare(current_password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Hash password baru dan update
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await sequelize.query(
+      'UPDATE users SET password = ? WHERE id = ?',
+      {
+        replacements: [hashedPassword, userId],
+        type: sequelize.QueryTypes.UPDATE
+      }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password successfully changed'
+    });
+
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to change password',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   login,
   logout,
   getUserDetail,
   resetPassword,
   resetPasswordById,
-  register
+  register,
+  changePassword
 };

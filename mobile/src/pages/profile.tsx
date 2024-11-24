@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import { Row, Col, Card, Button, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Button, Spinner, Modal, Form } from 'react-bootstrap';
 import Layout from '../components/Layout';
 
 // Config
-const API_URL = 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ProfileData {
   id: number;
@@ -15,9 +15,23 @@ interface ProfileData {
   is_active: boolean;
 }
 
+interface PasswordForm {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 const ProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,6 +59,61 @@ const ProfileScreen: React.FC = () => {
     if (confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('token');
       router.push('/login');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPasswordError('');
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    // Validasi password
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New password and confirm password do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/api/auth/password`,
+        {
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      // Reset form dan tutup modal
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setShowPasswordModal(false);
+      alert('Password has been successfully changed');
+    } catch (error: any) {
+      setPasswordError(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -103,8 +172,16 @@ const ProfileScreen: React.FC = () => {
               </div>
 
               <Button 
+                variant="primary" 
+                className="w-100 mt-3 mb-2"
+                onClick={() => setShowPasswordModal(true)}
+              >
+                Change Password
+              </Button>
+
+              <Button 
                 variant="danger" 
-                className="w-100 mt-3"
+                className="w-100"
                 onClick={handleLogout}
               >
                 Logout
@@ -113,6 +190,69 @@ const ProfileScreen: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal Reset Password */}
+      <Modal show={showPasswordModal} onHide={() => setShowPasswordModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Change Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleResetPassword}>
+            <Form.Group className="mb-3">
+              <Form.Label>Current Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="currentPassword"
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>New Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="newPassword"
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Confirm New Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="confirmPassword"
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </Form.Group>
+
+            {passwordError && (
+              <div className="alert alert-danger">{passwordError}</div>
+            )}
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowPasswordModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Changing...' : 'Change Password'}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </Layout>
   );
 };

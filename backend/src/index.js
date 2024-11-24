@@ -10,6 +10,7 @@ const branchRoutes = require('./routes/branchRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
 const benefitRoutes = require('./routes/benefitRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 const path = require('path');
 
 const app = express();
@@ -88,6 +89,7 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/salaries', salaryRoutes);
 app.use('/api/benefits', benefitRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

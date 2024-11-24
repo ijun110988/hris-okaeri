@@ -50,10 +50,10 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Container className="py-4">
+      <Container className="py-3">
         <Row>
           <Col xs={12}>
-            <h1 className="h4 mb-4">Welcome, {user?.name || 'User'}</h1>
+            <h1 className="h4 mb-3">Welcome, {user?.name || 'User'}</h1>
           </Col>
         </Row>
 
