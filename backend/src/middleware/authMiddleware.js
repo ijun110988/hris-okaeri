@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, Employee } = require('../models');
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -27,8 +27,11 @@ const authenticateToken = async (req, res, next) => {
       return next();
     }
 
-    // For regular users, get user from database
-    const user = await User.findByPk(decoded.id);
+    // For regular users, get user from database with employee info
+    const user = await User.findByPk(decoded.id, {
+      attributes: ['id', 'username', 'name', 'role', 'is_active']
+    });
+
     if (!user) {
       return res.status(401).json({
         status: 'error',
@@ -36,8 +39,14 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Add user info to request
+    // Get employee info if exists
+    const employee = await Employee.findOne({
+      where: { user_id: user.id }
+    });
+
+    // Add user and employee info to request
     req.user = user;
+    req.employee = employee;
     next();
   } catch (error) {
     console.error('Auth error:', error);

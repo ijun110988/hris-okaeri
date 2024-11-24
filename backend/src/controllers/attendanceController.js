@@ -381,15 +381,17 @@ const getReport = async (req, res) => {
         const startStr = start.format('YYYY-MM-DD HH:mm:ss');
         const endStr = end.format('YYYY-MM-DD HH:mm:ss');
 
-        // Query attendance records with direct JOIN
+        // Query attendance records with JOIN to employees and branches
         const query = `
             SELECT 
                 a.*,
                 b.name as branch_name,
                 b.code as branch_code,
-                b.address as branch_address
-            FROM attendances a
-            LEFT JOIN branches b ON a.branch_id = b.id
+                b.address as branch_address,
+                e.branch_id
+            FROM Attendances a
+            LEFT JOIN Employees e ON a.user_id = e.user_id
+            LEFT JOIN Branches b ON e.branch_id = b.id
             WHERE a.user_id = :userId
             AND a.check_in_time >= :startDate
             AND a.check_in_time <= :endDate
@@ -428,33 +430,17 @@ const getReport = async (req, res) => {
             // Calculate duration if check-out exists
             let duration = null;
             if (checkOutTime) {
-                const diff = checkOutTime.diff(checkInTime);
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                duration = `${hours}h ${minutes}m`;
-            }
-
-            // Determine status
-            let status;
-            const checkInHour = checkInTime.hour();
-            const checkInMinute = checkInTime.minute();
-
-            if (!checkOutTime) {
-                status = 'incomplete';
-            } else if (checkInHour > 9 || (checkInHour === 9 && checkInMinute > 0)) {
-                status = 'late';
-            } else {
-                status = 'present';
+                duration = moment.duration(checkOutTime.diff(checkInTime));
             }
 
             return {
                 id: record.id,
-                date: checkInTime.format('YYYY-MM-DD'),
-                checkIn: checkInTime.format('HH:mm'),
-                checkOut: checkOutTime ? checkOutTime.format('HH:mm') : null,
-                duration,
-                status,
+                checkInTime: checkInTime.format(),
+                checkOutTime: checkOutTime ? checkOutTime.format() : null,
+                duration: duration ? duration.asHours().toFixed(2) : null,
+                status: record.status,
                 branch: {
+                    id: record.branch_id,
                     name: record.branch_name,
                     code: record.branch_code,
                     address: record.branch_address

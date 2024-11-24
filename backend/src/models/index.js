@@ -19,23 +19,23 @@ fs.readdirSync(__dirname)
 // Set up associations
 if (db.Attendance && db.Branch) {
   db.Attendance.belongsTo(db.Branch, {
-    foreignKey: 'branchId',
+    foreignKey: 'branch_id',
     as: 'Branch'
   });
 
   db.Branch.hasMany(db.Attendance, {
-    foreignKey: 'branchId',
+    foreignKey: 'branch_id',
     as: 'Attendances'
   });
 }
 
 if (db.Branch && db.Employee) {
   db.Branch.hasMany(db.Employee, {
-    foreignKey: 'branchId'
+    foreignKey: 'branch_id'
   });
 
   db.Employee.belongsTo(db.Branch, {
-    foreignKey: 'branchId'
+    foreignKey: 'branch_id'
   });
 }
 
