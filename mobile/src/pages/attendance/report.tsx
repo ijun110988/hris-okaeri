@@ -21,9 +21,9 @@ interface AttendanceRecord {
 
 interface Summary {
     totalDays: number;
-    present: number;
-    late: number;
-    incomplete: number;
+    presentDays: number;
+    lateDays: number;
+    incompleteDays: number;
     averageWorkHours: number;
 }
 
@@ -178,7 +178,7 @@ export default function AttendanceReport() {
                                     <div className="rounded-circle bg-success bg-opacity-10 p-3 mb-2">
                                         <Clock className="text-success" size={24} />
                                     </div>
-                                    <h3 className="mb-1">{summary.present}</h3>
+                                    <h3 className="mb-1">{summary.presentDays}</h3>
                                     <Card.Text className="text-muted mb-0">Present</Card.Text>
                                 </Card.Body>
                             </Card>
@@ -189,7 +189,7 @@ export default function AttendanceReport() {
                                     <div className="rounded-circle bg-warning bg-opacity-10 p-3 mb-2">
                                         <Clock className="text-warning" size={24} />
                                     </div>
-                                    <h3 className="mb-1">{summary.late}</h3>
+                                    <h3 className="mb-1">{summary.lateDays}</h3>
                                     <Card.Text className="text-muted mb-0">Late</Card.Text>
                                 </Card.Body>
                             </Card>
@@ -200,7 +200,7 @@ export default function AttendanceReport() {
                                     <div className="rounded-circle bg-danger bg-opacity-10 p-3 mb-2">
                                         <Clock className="text-danger" size={24} />
                                     </div>
-                                    <h3 className="mb-1">{summary.incomplete}</h3>
+                                    <h3 className="mb-1">{summary.incompleteDays}</h3>
                                     <Card.Text className="text-muted mb-0">Incomplete</Card.Text>
                                 </Card.Body>
                             </Card>

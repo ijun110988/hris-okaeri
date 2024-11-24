@@ -358,24 +358,21 @@ const checkOut = async (req, res) => {
 // Get attendance report
 const getReport = async (req, res) => {
     try {
+        // Get date range from query params or use current month
+        const { start: startDate, end: endDate } = req.query;
         const userId = req.user.id;
-        const { startDate, endDate } = req.query;
 
-        // If no dates provided, use current month
-        const today = moment.tz('Asia/Jakarta');
-        const start = startDate 
-            ? moment.tz(startDate, 'Asia/Jakarta').startOf('day')
-            : today.clone().startOf('month');
-        const end = endDate 
-            ? moment.tz(endDate, 'Asia/Jakarta').endOf('day')
-            : today.clone().endOf('month');
+        // Default to current month if no dates provided
+        const start = startDate ? moment.tz(startDate, 'Asia/Jakarta').startOf('day')
+            : moment.tz('Asia/Jakarta').startOf('month');
+        const end = endDate ? moment.tz(endDate, 'Asia/Jakarta').endOf('day')
+            : moment.tz('Asia/Jakarta').endOf('month');
 
-        console.log('Debug Info:');
-        console.log('User ID:', userId);
-        console.log('Start Date (raw):', startDate);
-        console.log('End Date (raw):', endDate);
-        console.log('Start Date (processed):', start.format('YYYY-MM-DD HH:mm:ss'));
-        console.log('End Date (processed):', end.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('Date Range:', {
+            start: start.format(),
+            end: end.format(),
+            userId
+        });
 
         // Format dates for MySQL query
         const startStr = start.format('YYYY-MM-DD HH:mm:ss');
@@ -389,9 +386,9 @@ const getReport = async (req, res) => {
                 b.code as branch_code,
                 b.address as branch_address,
                 e.branch_id
-            FROM Attendances a
-            LEFT JOIN Employees e ON a.user_id = e.user_id
-            LEFT JOIN Branches b ON e.branch_id = b.id
+            FROM attendances a
+            LEFT JOIN employees e ON a.user_id = e.user_id
+            LEFT JOIN branches b ON e.branch_id = b.id
             WHERE a.user_id = :userId
             AND a.check_in_time >= :startDate
             AND a.check_in_time <= :endDate
@@ -418,27 +415,47 @@ const getReport = async (req, res) => {
             }
         );
 
-        console.log('Query Results:', JSON.stringify(records, null, 2));
+        console.log('Raw Records:', JSON.stringify(records, null, 2));
 
         // Process records and calculate statistics
         const processedRecords = records.map(record => {
-            const checkInTime = moment.tz(record.check_in_time, 'Asia/Jakarta');
+            // Parse dates with explicit format
+            const checkInTime = moment.tz(record.check_in_time, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta');
             const checkOutTime = record.check_out_time 
-                ? moment.tz(record.check_out_time, 'Asia/Jakarta')
+                ? moment.tz(record.check_out_time, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta')
                 : null;
             
             // Calculate duration if check-out exists
             let duration = null;
+            let durationText = null;
             if (checkOutTime) {
                 duration = moment.duration(checkOutTime.diff(checkInTime));
+                const hours = Math.floor(duration.asHours());
+                const minutes = Math.floor(duration.asMinutes() % 60);
+                durationText = `${hours}h ${minutes}m`;
+            }
+
+            // Determine status based on check-in time
+            let status = record.status;
+            const checkInHour = checkInTime.hour();
+            const checkInMinute = checkInTime.minute();
+            
+            if (!checkOutTime) {
+                status = 'incomplete';
+            } else if (checkInHour > 9 || (checkInHour === 9 && checkInMinute > 0)) {
+                status = 'late';
             }
 
             return {
                 id: record.id,
-                checkInTime: checkInTime.format(),
-                checkOutTime: checkOutTime ? checkOutTime.format() : null,
-                duration: duration ? duration.asHours().toFixed(2) : null,
-                status: record.status,
+                date: checkInTime.format('YYYY-MM-DD'),
+                checkIn: checkInTime.format('HH:mm:ss'),
+                checkOut: checkOutTime ? checkOutTime.format('HH:mm:ss') : null,
+                checkInTime: checkInTime.format('YYYY-MM-DD HH:mm:ss'),
+                checkOutTime: checkOutTime ? checkOutTime.format('YYYY-MM-DD HH:mm:ss') : null,
+                duration: durationText,
+                durationHours: duration ? duration.asHours().toFixed(2) : null,
+                status,
                 branch: {
                     id: record.branch_id,
                     name: record.branch_name,
@@ -448,44 +465,32 @@ const getReport = async (req, res) => {
             };
         });
 
-        console.log('Processed Records:', JSON.stringify(processedRecords, null, 2));
-
-        // Calculate summary
-        const present = processedRecords.filter(r => r.status === 'present').length;
-        const late = processedRecords.filter(r => r.status === 'late').length;
-        const incomplete = processedRecords.filter(r => r.status === 'incomplete').length;
-
-        // Calculate average work hours for completed days
-        const completedRecords = processedRecords.filter(r => r.duration);
-        const totalMinutes = completedRecords.reduce((acc, record) => {
-            const [hours, minutes] = record.duration.split('h ');
-            return acc + (parseInt(hours) * 60) + parseInt(minutes);
-        }, 0);
-        const averageWorkHours = completedRecords.length > 0 
-            ? Math.round((totalMinutes / completedRecords.length) / 60 * 10) / 10
-            : 0;
-
-        const response = {
-            status: 'success',
-            data: {
-                records: processedRecords,
-                summary: {
-                    totalDays: processedRecords.length,
-                    present,
-                    late,
-                    incomplete,
-                    averageWorkHours
-                },
-                period: {
-                    startDate: start.format('YYYY-MM-DD'),
-                    endDate: end.format('YYYY-MM-DD')
+        // Calculate summary statistics
+        const summary = {
+            totalDays: processedRecords.length,
+            presentDays: processedRecords.filter(r => r.status === 'present').length,
+            lateDays: processedRecords.filter(r => r.status === 'late').length,
+            incompleteDays: processedRecords.filter(r => r.status === 'incomplete').length,
+            totalHours: processedRecords.reduce((sum, r) => {
+                if (r.durationHours) {
+                    return sum + parseFloat(r.durationHours);
                 }
-            }
+                return sum;
+            }, 0).toFixed(2)
         };
 
-        console.log('Final Response:', JSON.stringify(response, null, 2));
-
-        res.json(response);
+        // Send response
+        res.json({
+            status: 'success',
+            data: {
+                period: {
+                    start: start.format('YYYY-MM-DD'),
+                    end: end.format('YYYY-MM-DD')
+                },
+                records: processedRecords,
+                summary
+            }
+        });
     } catch (error) {
         console.error('Error in getReport:', error);
         res.status(500).json({
